@@ -145,6 +145,8 @@
                             @enderror
                         </div>
 
+                        @include('admin.products.partials.video-input', ['product' => $product])
+
                         <!-- معلومات إضافية -->
                         <div class="card bg-light mb-4">
                             <div class="card-body">

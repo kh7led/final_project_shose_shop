@@ -38,6 +38,11 @@
                         </div>
                     </div>
                 @endif
+                @if($product->video)
+                    <video src="{{ asset('storage/' . $product->video) }}"
+                           controls playsinline preload="metadata"
+                           class="rounded shadow w-100 mt-3" style="max-height: 400px; background: #000;"></video>
+                @endif
             </div>
         </div>
 

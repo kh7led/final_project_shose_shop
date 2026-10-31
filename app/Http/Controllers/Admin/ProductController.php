@@ -92,7 +92,8 @@ class ProductController extends Controller
             'description' => 'required|string|min:10',
             'price' => 'required|numeric|min:0.01',
             'quantity' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/webm,video/3gpp,video/3gpp2,video/x-m4v,video/x-matroska|max:51200'
         ], [
             'name.required' => 'اسم المنتج مطلوب',
             'name.max' => 'اسم المنتج لا يجب أن يتجاوز 255 حرف',
@@ -108,7 +109,11 @@ class ProductController extends Controller
             'quantity.min' => 'الكمية لا يمكن أن تكون أقل من صفر',
             'image.image' => 'الملف يجب أن يكون صورة',
             'image.mimes' => 'نوع الصورة يجب أن يكون: jpeg, png, jpg, gif, webp',
-            'image.max' => 'حجم الصورة لا يجب أن يتجاوز 2MB'
+            'image.max' => 'حجم الصورة لا يجب أن يتجاوز 2MB',
+            'video.file' => 'فشل رفع الفيديو، تأكد من حجم الملف',
+            'video.uploaded' => 'فشل رفع الفيديو، ربما حجمه أكبر من المسموح في إعدادات السيرفر',
+            'video.mimetypes' => 'نوع الفيديو يجب أن يكون: mp4, mov, webm, 3gp',
+            'video.max' => 'حجم الفيديو لا يجب أن يتجاوز 50MB'
         ]);
 
         try {
@@ -130,6 +135,12 @@ class ProductController extends Controller
                 $image = $request->file('image');
                 $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
                 $data['image'] = $image->storeAs('products', $imageName, 'public');
+            }
+
+            // رفع الفيديو إذا وجد (من معرض الجوال أو التصوير المباشر)
+            unset($data['video']);
+            if ($request->hasFile('video')) {
+                $data['video'] = $this->storeVideo($request->file('video'));
             }
 
             Product::create($data);
@@ -182,7 +193,8 @@ class ProductController extends Controller
             'description' => 'required|string|min:10',
             'price' => 'required|numeric|min:0.01',
             'quantity' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/webm,video/3gpp,video/3gpp2,video/x-m4v,video/x-matroska|max:51200'
         ], [
             'name.required' => 'اسم المنتج مطلوب',
             'name.max' => 'اسم المنتج لا يجب أن يتجاوز 255 حرف',
@@ -198,7 +210,11 @@ class ProductController extends Controller
             'quantity.min' => 'الكمية لا يمكن أن تكون أقل من صفر',
             'image.image' => 'الملف يجب أن يكون صورة',
             'image.mimes' => 'نوع الصورة يجب أن يكون: jpeg, png, jpg, gif, webp',
-            'image.max' => 'حجم الصورة لا يجب أن يتجاوز 2MB'
+            'image.max' => 'حجم الصورة لا يجب أن يتجاوز 2MB',
+            'video.file' => 'فشل رفع الفيديو، تأكد من حجم الملف',
+            'video.uploaded' => 'فشل رفع الفيديو، ربما حجمه أكبر من المسموح في إعدادات السيرفر',
+            'video.mimetypes' => 'نوع الفيديو يجب أن يكون: mp4, mov, webm, 3gp',
+            'video.max' => 'حجم الفيديو لا يجب أن يتجاوز 50MB'
         ]);
 
         try {
@@ -228,6 +244,17 @@ class ProductController extends Controller
                 $image = $request->file('image');
                 $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
                 $data['image'] = $image->storeAs('products', $imageName, 'public');
+            }
+
+            // التعامل مع الفيديو
+            unset($data['video'], $data['remove_video']);
+            if ($request->hasFile('video') || $request->boolean('remove_video')) {
+                if ($product->video) {
+                    Storage::disk('public')->delete($product->video);
+                }
+                $data['video'] = $request->hasFile('video')
+                    ? $this->storeVideo($request->file('video'))
+                    : null;
             }
 
             $product->update($data);
@@ -262,6 +289,11 @@ class ProductController extends Controller
                 Storage::disk('public')->delete($product->image);
             }
 
+            // حذف الفيديو
+            if ($product->video) {
+                Storage::disk('public')->delete($product->video);
+            }
+
             // حذف المنتج من السلة أولاً
             $product->carts()->delete();
 
@@ -279,5 +311,16 @@ class ProductController extends Controller
 
             return redirect()->back()->with('error', 'حدث خطأ أثناء حذف المنتج');
         }
+    }
+
+    /**
+     * حفظ فيديو المنتج في التخزين العام
+     */
+    private function storeVideo($video)
+    {
+        $extension = strtolower($video->getClientOriginalExtension() ?: $video->guessExtension() ?: 'mp4');
+        $videoName = time() . '_' . Str::random(10) . '.' . $extension;
+
+        return $video->storeAs('products/videos', $videoName, 'public');
     }
 }

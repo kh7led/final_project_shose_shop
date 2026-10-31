@@ -40,6 +40,11 @@
                                     <i class="fas fa-shoe-prints fa-4x text-muted"></i>
                                 </div>
                             @endif
+                            @if($product->video)
+                                <video src="{{ asset('storage/' . $product->video) }}"
+                                       controls playsinline preload="metadata"
+                                       class="rounded shadow w-100 mt-3" style="max-height: 300px; background: #000;"></video>
+                            @endif
                         </div>
 
                         <div class="col-md-6">
