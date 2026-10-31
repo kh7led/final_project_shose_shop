@@ -129,6 +129,8 @@
                             @enderror
                         </div>
 
+                        @include('admin.products.partials.video-input')
+
                         <!-- معاينة البيانات -->
                         <div class="card bg-light mb-4" id="productPreview" style="display: none;">
                             <div class="card-header">

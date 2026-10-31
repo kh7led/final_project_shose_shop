@@ -16,6 +16,7 @@ class Product extends Model
         'price',
         'quantity',
         'image',
+        'video',
         'category_id'
     ];
 
@@ -51,6 +52,12 @@ class Product extends Model
     public function getImageUrlAttribute()
     {
         return $this->image ? asset('storage/' . $this->image) : null;
+    }
+
+    // اكسسر للفيديو
+    public function getVideoUrlAttribute()
+    {
+        return $this->video ? asset('storage/' . $this->video) : null;
     }
 
     // تحقق من توفر المنتج
